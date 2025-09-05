@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Logs - MikroTik Credential Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Alerts Container -->
+    <div id="alerts-container"></div>
+    
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-list-alt text-primary me-2"></i>
+                        Activity Logs
+                    </h1>
+                    <p class="text-muted mb-0">Monitor system activities and user actions</p>
+                </div>
+                <div>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-secondary" onclick="refreshLogs()">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="exportLogs()">
+                            <i class="fas fa-download me-2"></i>Export
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="clearOldLogs()">
+                            <i class="fas fa-trash me-2"></i>Clear Old
+                        </button>
+                        {% if syslog_url %}
+                        <a class="btn btn-outline-dark" href="{{ syslog_url }}" target="_blank" rel="noopener">
+                            <i class="fas fa-network-wired me-2"></i>Open Syslog UI
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h3 text-primary mb-1">{{ total_matching }}</div>
+                    <div class="text-muted">Total Logs</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h3 text-success mb-1">{{ success_count }}</div>
+                    <div class="text-muted">Successful</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h3 text-danger mb-1">{{ failed_count }}</div>
+                    <div class="text-muted">Failed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h3 text-info mb-1">
+                        {{ last_24h_count or 0 }}
+                    </div>
+                    <div class="text-muted">Last 24h</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="logsFilterForm" method="get" action="/admin/logs">
+                        <input type="hidden" name="page" id="pageInput" value="{{ page }}">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Filter by Action</label>
+                                <select class="form-select" id="actionFilter" name="action">
+                                    <option value="" {{ 'selected' if not f_action else '' }}>All Actions</option>
+                                    <optgroup label="Authentication">
+                                        <option value="login_success" {{ 'selected' if f_action=='login_success' else '' }}>Login Success</option>
+                                        <option value="login_failed" {{ 'selected' if f_action=='login_failed' else '' }}>Login Failed</option>
+                                        <option value="logout" {{ 'selected' if f_action=='logout' else '' }}>Logout</option>
+                                    </optgroup>
+                                    <optgroup label="MikroTik Changes">
+                                        <option value="connection_test_success" {{ 'selected' if f_action=='connection_test_success' else '' }}>Connection Test</option>
+                                        <option value="credential_request_success" {{ 'selected' if f_action=='credential_request_success' else '' }}>Credential Request</option>
+                                        <option value="credential_request_failed" {{ 'selected' if f_action=='credential_request_failed' else '' }}>Request Failed</option>
+                                        <option value="credential_revoked" {{ 'selected' if f_action=='credential_revoked' else '' }}>Credential Revoked</option>
+                                    </optgroup>
+                                    <optgroup label="User Management">
+                                        <option value="user_created" {{ 'selected' if f_action=='user_created' else '' }}>User Created</option>
+                                        <option value="user_updated" {{ 'selected' if f_action=='user_updated' else '' }}>User Updated</option>
+                                        <option value="user_deleted" {{ 'selected' if f_action=='user_deleted' else '' }}>User Deleted</option>
+                                        <option value="settings_updated" {{ 'selected' if f_action=='settings_updated' else '' }}>Service Settings Updated</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Filter by Status</label>
+                                <select class="form-select" id="statusFilter" name="status">
+                                    <option value="" {{ 'selected' if not f_status else '' }}>All Status</option>
+                                    <option value="success" {{ 'selected' if f_status=='success' else '' }}>Success</option>
+                                    <option value="failed" {{ 'selected' if f_status=='failed' else '' }}>Failed</option>
+                                    <option value="error" {{ 'selected' if f_status=='error' else '' }}>Error</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Filter by User</label>
+                                <input type="text" class="form-control" id="userFilter" name="user" value="{{ f_user or '' }}" placeholder="Username or full name...">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Filter by IP</label>
+                                <input type="text" class="form-control" id="ipFilter" name="ip" value="{{ f_ip or '' }}" placeholder="IP address...">
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Date Range</label>
+                                <select class="form-select" id="dateFilter" name="date">
+                                    <option value="" {{ 'selected' if not f_date else '' }}>All Time</option>
+                                    <option value="today" {{ 'selected' if f_date=='today' else '' }}>Today</option>
+                                    <option value="yesterday" {{ 'selected' if f_date=='yesterday' else '' }}>Yesterday</option>
+                                    <option value="week" {{ 'selected' if f_date=='week' else '' }}>This Week</option>
+                                    <option value="month" {{ 'selected' if f_date=='month' else '' }}>This Month</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Search Details</label>
+                                <input type="text" class="form-control" id="detailsSearch" name="details" value="{{ f_details or '' }}" placeholder="Search in details...">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Logs Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            Recent Activity
+                        </h5>
+                        <div>
+                            <span class="badge bg-info" id="logCount">{{ logs|length }} of {{ total_matching }} logs</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if logs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="logsTable">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Target/Details</th>
+                                    <th>IP Address</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                <tr data-action="{{ log.action }}" 
+                                    data-status="{{ log.status }}" 
+                                    data-date="{{ log.created_at[:10] if log.created_at else '' }}"
+                                    data-user="{{ (log.username or '')|lower }}"
+                                    data-ip="{{ log.ip_address or '' }}"
+                                    data-details="{{ (log.details or '')|lower }}">
+                                    <td>
+                                        <div>{{ log.created_at[:10] if log.created_at else 'N/A' }}</div>
+                                        <small class="text-muted">{{ log.created_at[11:19] if log.created_at else 'N/A' }}</small>
+                                    </td>
+                                    <td>
+                                        {% if log.username %}
+                                        <div>
+                                            <strong>{{ log.full_name or log.username }}</strong>
+                                            {% if log.full_name %}
+                                            <br><small class="text-muted">{{ log.username }}</small>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">System</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.action == 'login_success' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-sign-in-alt me-1"></i>Login Success
+                                            </span>
+                                        {% elif log.action == 'login_failed' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-sign-in-alt me-1"></i>Login Failed
+                                            </span>
+                                        {% elif log.action == 'logout' %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                                            </span>
+                                        {% elif log.action == 'credential_request_success' %}
+                                            <span class="badge bg-primary">
+                                                <i class="fas fa-key me-1"></i>Credential Request
+                                            </span>
+                                        {% elif log.action == 'credential_request_failed' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-key me-1"></i>Request Failed
+                                            </span>
+                                        {% elif log.action == 'credential_revoked' %}
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-times me-1"></i>Credential Revoked
+                                            </span>
+                                        {% elif log.action == 'user_created' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-user-plus me-1"></i>User Created
+                                            </span>
+                                        {% elif log.action == 'user_deleted' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-user-minus me-1"></i>User Deleted
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark">
+                                                <i class="fas fa-info me-1"></i>{{ log.action|title }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.target_ip %}
+                                        <div>
+                                            <strong>{{ log.target_ip }}</strong>
+                                            {% if log.target_identity %}
+                                            <br><small class="text-muted">{{ log.target_identity }}</small>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                        {% if log.details %}
+                                        <div class="text-muted small" style="max-width: 300px;">
+                                            <span class="text-truncate d-inline-block w-100" 
+                                                  data-bs-toggle="tooltip" 
+                                                  title="{{ log.details }}">
+                                                {{ log.details }}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.ip_address %}
+                                        <span class="font-monospace">{{ log.ip_address }}</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.status == 'success' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i>Success
+                                            </span>
+                                        {% elif log.status == 'failed' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times me-1"></i>Failed
+                                            </span>
+                                        {% elif log.status == 'error' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Error
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination would go here if needed -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted">
+                            Page {{ page }} of {{ total_pages }}
+                        </div>
+                        <div>
+                            <nav aria-label="Logs pagination">
+                              <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                                  <a class="page-link" href="/admin/logs?page={{ page - 1 }}&action={{ f_action }}&status={{ f_status }}&user={{ f_user }}&ip={{ f_ip }}&date={{ f_date }}&details={{ f_details }}">Previous</a>
+                                </li>
+                                <li class="page-item disabled"><span class="page-link">{{ page }}</span></li>
+                                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                                  <a class="page-link" href="/admin/logs?page={{ page + 1 }}&action={{ f_action }}&status={{ f_status }}&user={{ f_user }}&ip={{ f_ip }}&date={{ f_date }}&details={{ f_details }}">Next</a>
+                                </li>
+                              </ul>
+                            </nav>
+                        </div>
+                    </div>
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-list-alt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No activity logs found</h5>
+                        <p class="text-muted">System activities will appear here as they occur.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Details Modal -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>Log Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="logDetailsBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Submit filters to server for full-dataset filtering
+const form = document.getElementById('logsFilterForm');
+const pageInput = document.getElementById('pageInput');
+
+function debounce(fn, delay) {
+    let t; return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), delay); };
+}
+
+function submitFilters() {
+    pageInput.value = 1; // reset to first page
+    form.submit();
+}
+
+document.getElementById('actionFilter').addEventListener('change', submitFilters);
+document.getElementById('statusFilter').addEventListener('change', submitFilters);
+document.getElementById('dateFilter').addEventListener('change', submitFilters);
+document.getElementById('userFilter').addEventListener('input', debounce(submitFilters, 400));
+document.getElementById('ipFilter').addEventListener('input', debounce(submitFilters, 400));
+document.getElementById('detailsSearch').addEventListener('input', debounce(submitFilters, 400));
+
+function refreshLogs() {
+    location.reload();
+}
+
+function exportLogs() {
+    const rows = Array.from(document.querySelectorAll('#logsTable tbody tr:not([style*="display: none"])'));
+    let csv = 'Timestamp,User,Action,Target,Details,IP Address,Status\n';
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const timestamp = cells[0].textContent.trim().replace(/\n/g, ' ');
+        const user = cells[1].textContent.trim().replace(/\n/g, ' ');
+        const action = row.dataset.action;
+        const targetIp = cells[3].querySelector('strong')?.textContent.trim() || '';
+        const targetIdentity = cells[3].querySelector('small')?.textContent.trim() || '';
+        const target = targetIdentity ? `${targetIp} [${targetIdentity}]` : targetIp;
+        const details = row.dataset.details.replace(/"/g, '""');
+        const ipAddress = row.dataset.ip;
+        const status = row.dataset.status;
+        
+        csv += `"${timestamp}","${user}","${action}","${targetIp}","${details}","${ipAddress}","${status}"\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `activity-logs-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showAlert('Activity logs exported successfully!', 'success');
+}
+
+function clearOldLogs() {
+    const options = [
+        { value: 7, text: 'Older than 7 days' },
+        { value: 30, text: 'Older than 30 days' },
+        { value: 90, text: 'Older than 90 days' },
+        { value: 365, text: 'Older than 1 year' }
+    ];
+    
+    let optionsHtml = '';
+    options.forEach(option => {
+        optionsHtml += `<option value="${option.value}">${option.text}</option>`;
+    });
+    
+    const modalHtml = `
+        <div class="modal fade" id="clearLogsModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-trash me-2"></i>Clear Old Logs
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Warning:</strong> This action cannot be undone. Old logs will be permanently deleted.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Delete logs:</label>
+                            <select class="form-select" id="clearDays">
+                                ${optionsHtml}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="confirmClearLogs()">
+                            <i class="fas fa-trash me-2"></i>Clear Logs
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('clearLogsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add new modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    new bootstrap.Modal(document.getElementById('clearLogsModal')).show();
+}
+
+function confirmClearLogs() {
+    const days = document.getElementById('clearDays').value;
+    
+    // Simulate clearing logs
+    showAlert(`Logs older than ${days} days have been cleared!`, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('clearLogsModal')).hide();
+    
+    setTimeout(() => {
+        location.reload();
+    }, 1500);
+}
+
+function loadMoreLogs() {
+    // Simulate loading more logs
+    showAlert('No more logs to load', 'info');
+}
+
+// Add click handlers for log rows to show details
+document.querySelectorAll('#logsTable tbody tr').forEach(row => {
+    row.addEventListener('click', function() {
+        showLogDetails(this);
+    });
+    row.style.cursor = 'pointer';
+});
+
+function showLogDetails(row) {
+    const cells = row.querySelectorAll('td');
+    const timestamp = cells[0].textContent.trim();
+    const user = cells[1].textContent.trim();
+    const action = cells[2].textContent.trim();
+    const details = row.dataset.details;
+    const ipAddress = row.dataset.ip;
+    const status = row.dataset.status;
+    
+    const content = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary">Basic Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Timestamp:</strong></td><td>${timestamp}</td></tr>
+                    <tr><td><strong>User:</strong></td><td>${user}</td></tr>
+                    <tr><td><strong>Action:</strong></td><td>${action}</td></tr>
+                    <tr><td><strong>Status:</strong></td><td>${status}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary">Network Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>IP Address:</strong></td><td>${ipAddress || 'N/A'}</td></tr>
+                    <tr><td><strong>User Agent:</strong></td><td>Browser/Client</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6 class="text-primary">Details</h6>
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <p class="mb-0">${details || 'No additional details available'}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('logDetailsBody').innerHTML = content;
+    new bootstrap.Modal(document.getElementById('logDetailsModal')).show();
+}
+
+// Auto-refresh logs every 30 seconds
+setInterval(() => {
+    if (document.visibilityState === 'visible') {
+        // Only refresh if page is visible
+        const currentCount = document.querySelectorAll('#logsTable tbody tr').length;
+        // In a real implementation, you would check for new logs via API
+    }
+}, 30000);
+</script>
+{% endblock %}

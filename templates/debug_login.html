@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login - MikroTik Credential Manager</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .debug-box { background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        form { background: white; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        input, button { padding: 10px; margin: 5px 0; width: 200px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #debug-log { background: #000; color: #0f0; padding: 10px; font-family: monospace; height: 200px; overflow-y: scroll; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Login Debug Page</h1>
+    
+    <div class="debug-box">
+        <h3>Current Status:</h3>
+        <div id="status-info">
+            <p><strong>URL:</strong> <span id="current-url"></span></p>
+            <p><strong>Cookies:</strong> <span id="current-cookies"></span></p>
+            <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+        </div>
+    </div>
+    
+    {% if error %}
+    <div class="debug-box error">
+        <h3>❌ Login Error:</h3>
+        <p>{{ error }}</p>
+    </div>
+    {% endif %}
+    
+    <div class="debug-box">
+        <h3>🔑 Login Form (Debug Version)</h3>
+        <form id="debug-login-form" method="post" action="/debug-login">
+            <div>
+                <label>Username:</label><br>
+                <input type="text" name="username" value="admin" required>
+            </div>
+            <div>
+                <label>Password:</label><br>
+                <input type="password" name="password" value="admin123" required>
+            </div>
+            <div>
+                <button type="submit">🚀 Debug Login</button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="debug-box">
+        <h3>📋 Debug Log:</h3>
+        <div id="debug-log"></div>
+    </div>
+    
+    <div class="debug-box">
+        <h3>🧪 Quick Tests:</h3>
+        <button onclick="testCookies()">Test Cookies</button>
+        <button onclick="testAjaxLogin()">Test AJAX Login</button>
+        <button onclick="testDashboardAccess()">Test Dashboard Access</button>
+        <button onclick="clearCookies()">Clear All Cookies</button>
+    </div>
+
+    <script>
+        // Debug logging
+        function log(message) {
+            const debugLog = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.innerHTML += `[${timestamp}] ${message}\n`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(message);
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('current-url').textContent = window.location.href;
+            document.getElementById('current-cookies').textContent = document.cookie || 'None';
+            document.getElementById('user-agent').textContent = navigator.userAgent;
+            
+            log('🔧 Debug page loaded');
+            log('📍 URL: ' + window.location.href);
+            log('🍪 Cookies: ' + (document.cookie || 'None'));
+        });
+        
+        // Form submission handler
+        document.getElementById('debug-login-form').addEventListener('submit', function(e) {
+            log('📤 Form submission started...');
+            log('👤 Username: ' + this.username.value);
+            log('🔒 Password: ' + (this.password.value ? '[PROVIDED]' : '[EMPTY]'));
+        });
+        
+        // Test functions
+        function testCookies() {
+            log('🧪 Testing cookie support...');
+            document.cookie = 'test=123; path=/';
+            const testCookie = document.cookie.includes('test=123');
+            log('🍪 Cookie test: ' + (testCookie ? '✅ WORKING' : '❌ FAILED'));
+            if (testCookie) {
+                document.cookie = 'test=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+                log('🗑️ Test cookie cleaned up');
+            }
+        }
+        
+        function testAjaxLogin() {
+            log('🧪 Testing AJAX login...');
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'username=admin&password=admin123'
+            })
+            .then(response => {
+                log('📡 AJAX Response status: ' + response.status);
+                log('📡 AJAX Response headers: ' + JSON.stringify([...response.headers.entries()]));
+                return response.text();
+            })
+            .then(data => {
+                log('📡 AJAX Response length: ' + data.length + ' chars');
+                if (data.includes('Invalid username or password')) {
+                    log('❌ AJAX: Invalid credentials');
+                } else if (data.includes('Dashboard') || data.includes('MikroTik')) {
+                    log('✅ AJAX: Login successful');
+                } else {
+                    log('❓ AJAX: Unknown response');
+                }
+            })
+            .catch(error => {
+                log('❌ AJAX Error: ' + error.message);
+            });
+        }
+        
+        function testDashboardAccess() {
+            log('🧪 Testing dashboard access...');
+            fetch('/')
+            .then(response => {
+                log('📊 Dashboard status: ' + response.status);
+                return response.text();
+            })
+            .then(data => {
+                if (data.includes('Dashboard')) {
+                    log('✅ Dashboard: Accessible');
+                } else if (data.includes('Login')) {
+                    log('❌ Dashboard: Redirected to login');
+                } else {
+                    log('❓ Dashboard: Unknown response');
+                }
+            })
+            .catch(error => {
+                log('❌ Dashboard Error: ' + error.message);
+            });
+        }
+        
+        function clearCookies() {
+            log('🗑️ Clearing all cookies...');
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            log('🗑️ Cookies cleared');
+            location.reload();
+        }
+        
+        // Monitor cookie changes
+        let lastCookies = document.cookie;
+        setInterval(function() {
+            if (document.cookie !== lastCookies) {
+                log('🍪 Cookies changed: ' + document.cookie);
+                lastCookies = document.cookie;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

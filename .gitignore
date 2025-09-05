@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Byte-compiled / optimized / DLL files
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+Lib/
+Scripts/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+.eggs/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+
+# MyPy / Pyre / Pyright
+.mypy_cache/
+.pyre/
+.pyright/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.code-workspace
+
+# Zencoder assistant metadata
+.zencoder/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+app.log
+
+# Environment and secrets
+.env
+.env.*
+*.env
+
+# Local databases
+*.sqlite
+*.db
+
+# Node (if any frontend tooling is added later)
+node_modules/
+
+# Logs folder and executables
+logs/
+logs/**/*
+*.exe

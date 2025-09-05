@@ -1,0 +1,739 @@
+{% extends "base.html" %}
+
+{% block title %}All Requests - MikroTik Credential Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Alerts Container -->
+    <div id="alerts-container"></div>
+    
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-clipboard-list text-primary me-2"></i>
+                        All Credential Requests
+                    </h1>
+                    <p class="text-muted mb-0">Monitor and manage all user credential requests</p>
+                </div>
+                <div>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-secondary" onclick="refreshRequests()">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="exportRequests()">
+                            <i class="fas fa-download me-2"></i>Export
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="revokeAllExpired()">
+                            <i class="fas fa-broom me-2"></i>Cleanup Expired
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h3 text-primary mb-1">{{ requests|length }}</div>
+                    <div class="text-muted">Total Requests</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h3 text-success mb-1">
+                        {{ requests|selectattr("status", "equalto", "active")|list|length }}
+                    </div>
+                    <div class="text-muted">Active Now</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h3 text-warning mb-1">
+                        {{ requests|selectattr("status", "equalto", "expired")|list|length }}
+                    </div>
+                    <div class="text-muted">Expired</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="h3 text-danger mb-1">
+                        {{ requests|selectattr("status", "equalto", "revoked")|list|length }}
+                    </div>
+                    <div class="text-muted">Revoked</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Filter by Status</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="expired">Expired</option>
+                                <option value="revoked">Revoked</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Filter by User</label>
+                            <select class="form-select" id="userFilter">
+                                <option value="">All Users</option>
+
+                                {% for username in (requests|map(attribute='username')|unique|list) %}
+                                <option value="{{ username }}">{{ username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Search IP Address</label>
+                            <input type="text" class="form-control" id="ipSearch" placeholder="192.168.1.1">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Date Range</label>
+                            <select class="form-select" id="dateFilter">
+                                <option value="">All Time</option>
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">Duration Filter</label>
+                            <select class="form-select" id="durationFilter">
+                                <option value="">All Durations</option>
+                                <option value="30">30 Minutes</option>
+                                <option value="60">1 Hour</option>
+                                <option value="180">3 Hours</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Search Purpose</label>
+                            <input type="text" class="form-control" id="purposeSearch" placeholder="Search in purpose...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-table me-2"></i>
+                            Credential Requests
+                        </h5>
+                        <div>
+                            <span class="badge bg-info" id="requestCount">{{ requests|length }} requests</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if requests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="requestsTable">
+                            <thead>
+                                <tr>
+                                    <th>Device</th>
+                                    <th>User</th>
+                                    <th>Purpose</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Expires</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in requests %}
+                                <tr data-status="{{ request.status }}" 
+                                    data-user="{{ request.username }}"
+                                    data-ip="{{ request.wan_ip }}" 
+                                    data-date="{{ request.created_at[:10] if request.created_at else '' }}"
+                                    data-duration="{{ request.duration_minutes }}"
+                                    data-purpose="{{ (request.purpose or '')|lower }}">
+                                    <td>
+                                        <div>
+                                            <strong class="font-monospace">{{ request.wan_ip }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ request.device_identity or 'Unknown' }}</small>
+                                            <br>
+                                            <small class="text-muted">{{ request.temp_username }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle me-2">
+                                                {{ (request.full_name or request.username)[0]|upper }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ request.full_name or request.username }}</div>
+                                                <small class="text-muted">{{ request.username }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" 
+                                              data-bs-toggle="tooltip" title="{{ request.purpose }}">
+                                            {{ request.purpose }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ request.duration_minutes }} min</span>
+                                    </td>
+                                    <td>
+                                        {% if request.status == 'active' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Active
+                                            </span>
+                                            <br>
+                                            <small class="text-muted countdown" data-expires="{{ request.expires_at if request.expires_at else '' }}">
+                                                <i class="fas fa-clock me-1"></i>
+                                                Calculating...
+                                            </small>
+                                        {% elif request.status == 'expired' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock me-1"></i>Expired
+                                            </span>
+                                        {% elif request.status == 'revoked' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>Revoked
+                                            </span>
+                                            {% if request.revoked_at %}
+                                            <br>
+                                            <small class="text-muted">{{ request.revoked_at | to_local }}</small>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>{{ request.created_at | to_local }}</div>
+                                        <small class="text-muted"></small>
+                                    </td>
+                                    <td>
+                                        <div>{{ request.expires_at | to_local }}</div>
+                                        <small class="text-muted"></small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group-vertical btn-group-sm" role="group">
+                                            {% if request.status == 'active' %}
+                                            <button class="btn btn-outline-info btn-sm" 
+                                                    onclick="showCredentials('{{ request.temp_username }}', '{{ request.temp_password }}', '{{ request.wan_ip }}')">
+                                                <i class="fas fa-eye me-1"></i>View
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" 
+                                                    onclick="revokeCredentials({{ request.id }})">
+                                                <i class="fas fa-times me-1"></i>Revoke
+                                            </button>
+                                            {% endif %}
+                                            
+                                            <button class="btn btn-outline-primary btn-sm" 
+                                                    onclick="showRequestDetails({{ request.id }}, '{{ request.wan_ip }}', '{{ request.purpose }}', '{{ request.duration_minutes }}', '{{ request.created_at if request.created_at else '' }}', '{{ request.expires_at if request.expires_at else '' }}', '{{ request.status }}', '{{ request.username }}', '{{ request.full_name or request.username }}', '{{ request.created_at | to_local }}', '{{ request.expires_at | to_local }}')">
+                                                <i class="fas fa-info me-1"></i>Details
+                                            </button>
+                                            
+                                            <button class="btn btn-outline-secondary btn-sm" 
+                                                    onclick="testDeviceConnection('{{ request.wan_ip }}')">
+                                                <i class="fas fa-plug me-1"></i>Test
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if pagination.total_pages > 1 %}
+                    <nav aria-label="Request history pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="/admin/requests?page={{ pagination.prev_page }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;</span>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in range(1, pagination.total_pages + 1) %}
+                                {% if page_num == pagination.page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% elif page_num <= 3 or page_num > pagination.total_pages - 3 or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
+                                <li class="page-item">
+                                    <a class="page-link" href="/admin/requests?page={{ page_num }}">{{ page_num }}</a>
+                                </li>
+                                {% elif page_num == 4 or page_num == pagination.total_pages - 3 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="/admin/requests?page={{ pagination.next_page }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    
+                    <!-- Pagination Info -->
+                    <div class="text-center text-muted mt-2">
+                        <small>
+                            Showing {{ ((pagination.page - 1) * pagination.per_page + 1) if pagination.total > 0 else 0 }} 
+                            to {{ [pagination.page * pagination.per_page, pagination.total] | min }} 
+                            of {{ pagination.total }} requests
+                        </small>
+                    </div>
+                    {% else %}
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted">
+                            Showing {{ requests|length }} requests
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No credential requests found</h5>
+                        <p class="text-muted">User credential requests will appear here.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Credentials Modal -->
+<div class="modal fade" id="credentialsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-key me-2"></i>Active Credentials
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Admin Access:</strong> Handle these credentials securely.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>Device IP:</strong></label>
+                    <input type="text" class="form-control" id="modal-ip" readonly>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>Username:</strong></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control font-monospace" id="modal-username" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copyToClipboard('modal-username')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>Password:</strong></label>
+                    <div class="input-group">
+                        <input type="password" class="form-control font-monospace" id="modal-password" readonly>
+                        <button class="btn btn-outline-secondary" onclick="toggleModalPassword()">
+                            <i class="fas fa-eye" id="modal-toggle-icon"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="copyToClipboard('modal-password')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Request Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>Request Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailsModalBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Update countdowns for active requests
+function parseDbDate(value) {
+    if (!value) return null;
+    // Normalize 'YYYY-MM-DD HH:MM:SS[.ffffff]' to ISO, append Z if no TZ
+    let iso = value.trim().replace(' ', 'T');
+    // If has microseconds like .448237, keep them; JS Date can parse up to milliseconds, so truncate to 3 digits
+    iso = iso.replace(/\.(\d{3})\d+/, '.$1');
+    if (!/(Z|[\+\-]\d{2}:?\d{2})$/.test(iso)) iso += 'Z';
+    return new Date(iso);
+}
+
+function updateCountdowns() {
+    document.querySelectorAll('.countdown').forEach(element => {
+        const expiresAt = parseDbDate(element.dataset.expires) || new Date();
+        const now = new Date();
+        const timeLeft = expiresAt - now;
+        
+        if (timeLeft <= 0) {
+            element.innerHTML = '<i class="fas fa-clock me-1"></i><span class="text-danger">Expired</span>';
+        } else {
+            const minutes = Math.floor(timeLeft / 60000);
+            const seconds = Math.floor((timeLeft % 60000) / 1000);
+            
+            let timeText = '';
+            if (minutes > 0) {
+                timeText = `${minutes}m ${seconds}s left`;
+            } else {
+                timeText = `${seconds}s left`;
+            }
+            
+            let className = 'text-success';
+            if (minutes < 5) {
+                className = 'text-danger';
+            } else if (minutes < 15) {
+                className = 'text-warning';
+            }
+            
+            element.innerHTML = `<i class="fas fa-clock me-1"></i><span class="${className}">${timeText}</span>`;
+        }
+    });
+}
+
+// Start countdown updates after DOM is ready
+function startAdminCountdowns() {
+    try {
+        updateCountdowns();
+        if (window.__adminCountdownInterval) clearInterval(window.__adminCountdownInterval);
+        window.__adminCountdownInterval = setInterval(updateCountdowns, 1000);
+    } catch (e) {}
+}
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(startAdminCountdowns, 0);
+} else {
+    document.addEventListener('DOMContentLoaded', startAdminCountdowns);
+}
+
+// Filter functionality
+document.getElementById('statusFilter').addEventListener('change', filterRequests);
+document.getElementById('userFilter').addEventListener('change', filterRequests);
+document.getElementById('ipSearch').addEventListener('input', filterRequests);
+document.getElementById('dateFilter').addEventListener('change', filterRequests);
+document.getElementById('durationFilter').addEventListener('change', filterRequests);
+document.getElementById('purposeSearch').addEventListener('input', filterRequests);
+
+function filterRequests() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const userFilter = document.getElementById('userFilter').value;
+    const ipSearch = document.getElementById('ipSearch').value.toLowerCase();
+    const dateFilter = document.getElementById('dateFilter').value;
+    const durationFilter = document.getElementById('durationFilter').value;
+    const purposeSearch = document.getElementById('purposeSearch').value.toLowerCase();
+    
+    const rows = document.querySelectorAll('#requestsTable tbody tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        let show = true;
+        
+        // Status filter
+        if (statusFilter && row.dataset.status !== statusFilter) {
+            show = false;
+        }
+        
+        // User filter
+        if (userFilter && row.dataset.user !== userFilter) {
+            show = false;
+        }
+        
+        // IP search
+        if (ipSearch && !row.dataset.ip.toLowerCase().includes(ipSearch)) {
+            show = false;
+        }
+        
+        // Duration filter
+        if (durationFilter && row.dataset.duration !== durationFilter) {
+            show = false;
+        }
+        
+        // Purpose search
+        if (purposeSearch && !row.dataset.purpose.includes(purposeSearch)) {
+            show = false;
+        }
+        
+        // Date filter
+        if (dateFilter) {
+            const rowDate = new Date(row.dataset.date);
+            const today = new Date();
+            
+            switch (dateFilter) {
+                case 'today':
+                    if (rowDate.toDateString() !== today.toDateString()) {
+                        show = false;
+                    }
+                    break;
+                case 'yesterday':
+                    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+                    if (rowDate.toDateString() !== yesterday.toDateString()) {
+                        show = false;
+                    }
+                    break;
+                case 'week':
+                    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    if (rowDate < weekAgo) {
+                        show = false;
+                    }
+                    break;
+                case 'month':
+                    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    if (rowDate < monthAgo) {
+                        show = false;
+                    }
+                    break;
+            }
+        }
+        
+        row.style.display = show ? '' : 'none';
+        if (show) visibleCount++;
+    });
+    
+    document.getElementById('visibleCount').textContent = visibleCount;
+    document.getElementById('requestCount').textContent = `${visibleCount} requests`;
+}
+
+function revokeCredentials(requestId) {
+    if (confirm('Are you sure you want to revoke these credentials? This action cannot be undone.')) {
+        fetch(`/revoke-credentials/${requestId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Credentials revoked successfully!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('Failed to revoke credentials: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error revoking credentials: ' + error.message, 'danger');
+        });
+    }
+}
+
+function showCredentials(username, password, ip) {
+    document.getElementById('modal-ip').value = ip;
+    document.getElementById('modal-username').value = username;
+    document.getElementById('modal-password').value = password;
+    new bootstrap.Modal(document.getElementById('credentialsModal')).show();
+}
+
+function showRequestDetails(id, ip, purpose, duration, created, expires, status, username, fullName, createdLocal, expiresLocal) {
+    // Prefer server-rendered local strings if provided
+    const createdDisplay = createdLocal || created;
+    const expiresDisplay = expiresLocal || expires;
+
+    const content = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary">Request Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Request ID:</strong></td><td>#${id}</td></tr>
+                    <tr><td><strong>Device IP:</strong></td><td class="font-monospace">${ip}</td></tr>
+                    <tr><td><strong>Duration:</strong></td><td>${duration} minutes</td></tr>
+                    <tr><td><strong>Status:</strong></td><td>
+                        <span class="badge bg-${status === 'active' ? 'success' : status === 'expired' ? 'warning' : 'danger'}">
+                            ${status.toUpperCase()}
+                        </span>
+                    </td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary">User Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Full Name:</strong></td><td>${fullName}</td></tr>
+                    <tr><td><strong>Username:</strong></td><td>${username}</td></tr>
+                    <tr><td><strong>Created:</strong></td><td>${createdDisplay}</td></tr>
+                    <tr><td><strong>Expires:</strong></td><td>${expiresDisplay}</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6 class="text-primary">Purpose</h6>
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <p class="mb-0">${purpose}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('detailsModalBody').innerHTML = content;
+    new bootstrap.Modal(document.getElementById('detailsModal')).show();
+}
+
+function testDeviceConnection(ip) {
+    showAlert('Testing connection to ' + ip + '...', 'info');
+    
+    fetch(`/api/test-connection/${ip}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(`Connection to ${ip} successful! Device: ${data.device_name || 'Unknown'}`, 'success');
+            } else {
+                showAlert(`Connection to ${ip} failed: ${data.error}`, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error testing connection: ' + error.message, 'danger');
+        });
+}
+
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value);
+    showAlert('Copied to clipboard!', 'success');
+}
+
+function toggleModalPassword() {
+    const passwordField = document.getElementById('modal-password');
+    const toggleIcon = document.getElementById('modal-toggle-icon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.className = 'fas fa-eye-slash';
+    } else {
+        passwordField.type = 'password';
+        toggleIcon.className = 'fas fa-eye';
+    }
+}
+
+function refreshRequests() {
+    location.reload();
+}
+
+function exportRequests() {
+    const rows = Array.from(document.querySelectorAll('#requestsTable tbody tr:not([style*="display: none"])'));
+    let csv = 'Device IP,User,Purpose,Duration,Status,Created,Expires\n';
+    
+    rows.forEach(row => {
+        const ip = row.dataset.ip;
+        const user = row.dataset.user;
+        const purpose = row.dataset.purpose.replace(/"/g, '""');
+        const duration = row.dataset.duration;
+        const status = row.dataset.status;
+        const date = row.dataset.date;
+        const cells = row.querySelectorAll('td');
+        const expires = cells[6].textContent.trim().replace(/\n/g, ' ');
+        
+        csv += `"${ip}","${user}","${purpose}","${duration}","${status}","${date}","${expires}"\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `all-requests-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showAlert('Requests exported successfully!', 'success');
+}
+
+function revokeAllExpired() {
+    if (!confirm('This will revoke all expired credentials from MikroTik devices. Continue?')) return;
+    showAlert('Cleaning up expired credentials...', 'info');
+    fetch('/admin/requests/cleanup-expired', { method: 'POST' })
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.success) {
+          showAlert(`Expired credentials cleanup complete. Revoked: ${d.revoked}, Errors: ${d.errors}`, 'success');
+          setTimeout(() => location.reload(), 1200);
+        } else {
+          showAlert(`Cleanup failed: ${d && d.error ? d.error : 'Unknown error'}`, 'danger');
+        }
+      })
+      .catch(err => showAlert(`Cleanup failed: ${err}`, 'danger'));
+}
+
+function loadMoreRequests() {
+    showAlert('No more requests to load', 'info');
+}
+</script>
+
+<style>
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

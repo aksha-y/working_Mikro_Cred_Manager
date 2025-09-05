@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Mikrotik-Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Alerts Container -->
+    <div id="alerts-container"></div>
+    
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-tachometer-alt text-primary me-2"></i>
+                        Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Welcome back, {{ user.full_name }}!</p>
+                </div>
+                <div>
+                    <a href="/request-credentials" class="btn btn-primary">
+                        <i class="fas fa-key me-2"></i>Request New Credentials
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stats-number">{{ stats.total_requests or 0 }}</div>
+                            <div class="text-uppercase">Total Requests</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stats-number">{{ stats.active_requests or 0 }}</div>
+                            <div class="text-uppercase">Active Now</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stats-number">{{ stats.expired_requests or 0 }}</div>
+                            <div class="text-uppercase">Expired</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-history fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stats-number">{{ stats.today_requests or 0 }}</div>
+                            <div class="text-uppercase">Today</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar-day fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Recent Credential Requests
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_requests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="active-requests-table">
+                            <thead>
+                                <tr>
+                                    <th>Device</th>
+                                    <th>Purpose</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Expires</th>
+                                    {% if user.role == 'admin' %}
+                                    <th>User</th>
+                                    {% endif %}
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in recent_requests %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ request.wan_ip }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ request.device_identity or 'Unknown' }}</small>
+                                        <br>
+                                        <small class="text-muted">{{ request.temp_username }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" 
+                                              data-bs-toggle="tooltip" title="{{ request.purpose }}">
+                                            {{ request.purpose }}
+                                        </span>
+                                    </td>
+                                    <td>{{ request.duration_minutes }} min</td>
+                                    <td>
+                                        {% if request.status == 'active' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Active
+                                            </span>
+                                        {% elif request.status == 'expired' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock me-1"></i>Expired
+                                            </span>
+                                        {% elif request.status == 'revoked' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>Revoked
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>{{ request.created_at | to_local }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ request.expires_at | to_local }}</small>
+                                    </td>
+                                    {% if user.role == 'admin' %}
+                                    <td>
+                                        <strong>{{ request.full_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ request.username }}</small>
+                                    </td>
+                                    {% endif %}
+                                    <td>
+                                        {% if request.status == 'active' %}
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="revokeCredentials({{ request.id }})">
+                                            <i class="fas fa-times me-1"></i>Revoke
+                                        </button>
+                                        {% endif %}
+                                        
+                                        {% if request.status == 'active' and (request.user_id == user.id or user.role == 'admin') %}
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                onclick="showCredentials('{{ request.temp_username }}', '{{ request.temp_password }}')">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No recent requests</h5>
+                        <p class="text-muted">Start by requesting new credentials for a MikroTik device.</p>
+                        <a href="/request-credentials" class="btn btn-primary">
+                            <i class="fas fa-key me-2"></i>Request Credentials
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Credentials Modal -->
+<div class="modal fade" id="credentialsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-key me-2"></i>Temporary Credentials
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Security Notice:</strong> These credentials are temporary and will expire automatically.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>Username:</strong></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="modal-username" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copyToClipboard('modal-username')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>Password:</strong></label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="modal-password" readonly>
+                        <button class="btn btn-outline-secondary" onclick="togglePassword('modal-password')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="copyToClipboard('modal-password')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function revokeCredentials(requestId) {
+    if (confirm('Are you sure you want to revoke these credentials? This action cannot be undone.')) {
+        fetch(`/revoke-credentials/${requestId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Credentials revoked successfully!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('Failed to revoke credentials: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error revoking credentials: ' + error.message, 'danger');
+        });
+    }
+}
+
+function showCredentials(username, password) {
+    document.getElementById('modal-username').value = username;
+    document.getElementById('modal-password').value = password;
+    new bootstrap.Modal(document.getElementById('credentialsModal')).show();
+}
+
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const textToCopy = element?.value || element?.textContent || '';
+    if (!textToCopy) { showAlert('Nothing to copy', 'warning'); return; }
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => showAlert('Copied to clipboard!', 'success'))
+            .catch(() => fallbackCopyText(textToCopy));
+    } else {
+        fallbackCopyText(textToCopy);
+    }
+}
+
+function fallbackCopyText(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.top = '-9999px';
+    document.body.appendChild(textarea);
+
+    try {
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+        document.execCommand('copy');
+        showAlert('Copied to clipboard!', 'success');
+    } catch (_) {
+        showAlert('Copy failed. Please press Ctrl+C.', 'warning');
+    } finally {
+        document.body.removeChild(textarea);
+    }
+}
+
+function togglePassword(elementId) {
+    const element = document.getElementById(elementId);
+    const button = element.nextElementSibling;
+    const icon = button.querySelector('i');
+    
+    if (element.type === 'password') {
+        element.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        element.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+</script>
+{% endblock %}

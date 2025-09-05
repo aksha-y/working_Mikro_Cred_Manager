@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Service Account Settings - MikroTik Credential Manager{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 720px;">
+    <div id="alerts-container">
+        {% if message %}
+        <div class="alert {{ 'alert-success' if persist_success else 'alert-warning' }} alert-dismissible fade show" role="alert">
+            <i class="fas fa-info-circle me-2"></i>{{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-user-shield me-2"></i> MikroTik Service Account
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="/admin/settings/update">
+                <div class="mb-3">
+                    <label class="form-label">Service Username</label>
+                    <input type="text" class="form-control" name="service_user" value="{{ service_user or '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Service Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="service_pass" name="service_pass" placeholder="Enter new password" required>
+                        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword()">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="generatePass()">
+                            <i class="fas fa-magic me-1"></i>Generate
+                        </button>
+                    </div>
+                    <div class="form-text">Password is never displayed. Enter a new value to change it.</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">API Port</label>
+                    <input type="number" class="form-control" name="api_port" value="{{ api_port or 8728 }}" min="1" max="65535" required>
+                    <div class="form-text">Default 8728 (API), 8729 (API-SSL)</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Use TLS for API</label>
+                    <select class="form-select" name="use_tls">
+                        <option value="auto" {{ 'selected' if use_tls is not none and ((api_port==8729 and use_tls) or (api_port!=8729 and not use_tls)) else '' }}>Auto (based on port)</option>
+                        <option value="on" {{ 'selected' if use_tls else '' }}>On</option>
+                        <option value="off" {{ 'selected' if not use_tls else '' }}>Off</option>
+                    </select>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" value="on" id="persist_env" name="persist_env">
+                    <label class="form-check-label" for="persist_env">
+                        Persist to .env file (recommended)
+                    </label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text"><i class="fas fa-save me-2"></i>Save Changes</span>
+                        <span class="loading spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </button>
+                    <a href="/admin" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Back</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+</div>
+
+<script>
+function togglePassword() {
+    const input = document.getElementById('service_pass');
+    input.type = input.type === 'password' ? 'text' : 'password';
+}
+function generatePass() {
+    const input = document.getElementById('service_pass');
+    input.value = generateRandomPassword(16);
+}
+function generateRandomPassword(length = 16) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let pwd = '';
+    for (let i = 0; i < length; i++) pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    return pwd;
+}
+</script>
+{% endblock %}
