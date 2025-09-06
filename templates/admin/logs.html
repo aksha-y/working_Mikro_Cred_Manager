@@ -19,18 +19,18 @@
                     <p class="text-muted mb-0">Monitor system activities and user actions</p>
                 </div>
                 <div>
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-outline-secondary" onclick="refreshLogs()">
+                    <div class="btn-group" role="group" style="gap: .5rem;">
+                        <button class="btn btn-navy" onclick="refreshLogs()">
                             <i class="fas fa-sync-alt me-2"></i>Refresh
                         </button>
-                        <button class="btn btn-outline-primary" onclick="exportLogs()">
+                        <button class="btn btn-primary" onclick="exportLogs()">
                             <i class="fas fa-download me-2"></i>Export
                         </button>
-                        <button class="btn btn-outline-danger" onclick="clearOldLogs()">
+                        <button class="btn btn-danger" onclick="clearOldLogs()">
                             <i class="fas fa-trash me-2"></i>Clear Old
                         </button>
                         {% if syslog_url %}
-                        <a class="btn btn-outline-dark" href="{{ syslog_url }}" target="_blank" rel="noopener">
+                        <a class="btn btn-dark" href="{{ syslog_url }}" target="_blank" rel="noopener">
                             <i class="fas fa-network-wired me-2"></i>Open Syslog UI
                         </a>
                         {% endif %}
