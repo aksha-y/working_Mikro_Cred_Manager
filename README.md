@@ -51,7 +51,7 @@ Optional for HTTPS and service:
 2. Edit `.env` and set at minimum:
    - **SECRET_KEY**: long random string
    - **HOST**: `0.0.0.0` (to listen on all interfaces)
-   - **PORT**: e.g. `8080`
+   - **PORT**: e.g. `8000`
    - **MIKROTIK_SERVICE_USER / MIKROTIK_SERVICE_PASSWORD**: service account present on each RouterOS device
    - **MIKROTIK_API_PORT**: 8728 for plain API (default) or 8729 for TLS
    - **MIKROTIK_API_TLS**: `false` for 8728, `true` for 8729
@@ -124,7 +124,7 @@ This creates tables and a default admin (password from `.env` ADMIN_DEFAULT_PASS
 .\.venv\Scripts\python.exe .\run.py
 ```
 - App reads `.env` and starts Uvicorn
-- Access locally: `http://localhost:8080`
+- Access locally: `http://localhost:8000`
 - Default login: `admin / admin123` (change after first login)
 
 ---
@@ -136,8 +136,8 @@ Run as Administrator:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\setup_firewall.ps1
 ```
-- Ensure your cloud provider/network security group also allows inbound TCP 8080.
-- Access externally: `http://YOUR_PUBLIC_IP:8080`
+- Ensure your cloud provider/network security group also allows inbound TCP 80.
+- Access externally: `http://YOUR_PUBLIC_IP:8000`
 
 If you use a different port, update `.env` PORT and open that port instead.
 
@@ -183,7 +183,7 @@ powershell -ExecutionPolicy Bypass -File .\renew_ssl.ps1 -Domain "yourdomain.com
 
 Install NSSM (https://nssm.cc/download) and then run as Administrator:
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\service_setup.ps1 -Port 8080 -BindHost 0.0.0.0
+powershell -ExecutionPolicy Bypass -File .\service_setup.ps1 -Port 8000 -BindHost 0.0.0.0
 ```
 - The script creates a service using the venv’s python and `run.py`
 - Logs are rotated to `./logs/service.*.log`
