@@ -128,7 +128,7 @@ This creates tables and a default admin (password from `.env` ADMIN_DEFAULT_PASS
 - Default login: `admin / admin123` (change after first login)
 
 ---
-- if still not working the please remove the file from the folder mikrotik_cred_manager.db and re run this command : .\.venv\Scripts\python.exe .\run.py
+- if credentials on login screen is not working then please remove the file from the folder mikrotik_cred_manager.db and then re run this command : .\.venv\Scripts\python.exe .\run.py
 
 ## 5) Open Windows Firewall (for public access)
 
