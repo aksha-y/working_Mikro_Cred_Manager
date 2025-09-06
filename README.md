@@ -56,6 +56,53 @@ Optional for HTTPS and service:
    - **MIKROTIK_API_PORT**: 8728 for plain API (default) or 8729 for TLS
    - **MIKROTIK_API_TLS**: `false` for 8728, `true` for 8729
 
+Demo of .example .enc file data
+# MikroTik Credential Manager Configuration
+
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=mikrotik_cred_manager
+
+# Application Configuration
+SECRET_KEY=your-super-secret-key-change-this-in-production-12345
+HOST=localhost
+PORT=8000
+DEBUG=True
+
+# MikroTik Configuration
+MIKROTIK_SERVICE_USER=service_user
+MIKROTIK_SERVICE_PASSWORD=service_password
+MIKROTIK_API_PORT=20829
+ADMIN_DEFAULT_PASSWORD=admin123
+
+# Security Settings
+SESSION_EXPIRE_MINUTES=480
+MAX_LOGIN_ATTEMPTS=5
+LOCKOUT_DURATION_MINUTES=15
+
+# Logging Configuration
+LOG_LEVEL=INFO
+LOG_FILE=app.log
+LOG_MAX_SIZE=10485760
+LOG_BACKUP_COUNT=5
+
+# System Settings
+TIMEZONE=UTC
+DEFAULT_TEMP_USER_PREFIX=temp_
+MAX_CONCURRENT_SESSIONS=10
+SESSION_CLEANUP_INTERVAL=300
+LOG_RETENTION_DAYS=90
+
+# Feature Flags
+ENABLE_EMAIL_NOTIFICATIONS=False
+ENABLE_API_RATE_LIMITING=True
+ENABLE_AUDIT_LOGGING=True
+ENABLE_AUTO_CLEANUP=True
+
+
 Note: Do not commit `.env` to GitHub.
 
 ---
