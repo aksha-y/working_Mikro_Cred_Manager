@@ -57,6 +57,7 @@ Optional for HTTPS and service:
    - **MIKROTIK_API_TLS**: `false` for 8728, `true` for 8729
 
 Demo of .example .enc file data
+   ```
 # MikroTik Credential Manager Configuration
 
 # Database Configuration
@@ -101,7 +102,7 @@ ENABLE_EMAIL_NOTIFICATIONS=False
 ENABLE_API_RATE_LIMITING=True
 ENABLE_AUDIT_LOGGING=True
 ENABLE_AUTO_CLEANUP=True
-
+```
 
 Note: Do not commit `.env` to GitHub.
 
