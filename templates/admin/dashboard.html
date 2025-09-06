@@ -3,7 +3,7 @@
 {% block title %}Admin Dashboard - MikroTik Credential Manager{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid page-compact">
     <!-- Alerts Container -->
     <div id="alerts-container"></div>
     
@@ -20,10 +20,10 @@
                 </div>
                 <div>
                     <div class="btn-group" role="group">
-                        <a href="/admin/users" class="btn btn-outline-primary">
+                        <a href="/admin/users" class="btn btn-orange">
                             <i class="fas fa-users me-2"></i>Manage Users
                         </a>
-                        <a href="/admin/logs" class="btn btn-outline-info">
+                        <a href="/admin/logs" class="btn btn-navy">
                             <i class="fas fa-list-alt me-2"></i>View Logs
                         </a>
                     </div>
@@ -32,67 +32,59 @@
         </div>
     </div>
 
-    <!-- Statistics Cards -->
+    <!-- Statistics Cards (Minimal) -->
     <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card stats-min card-sm accent-blue">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <div class="stats-number">{{ stats.total_users or 0 }}</div>
-                            <div class="text-uppercase">Total Users</div>
+                            <div class="text-uppercase text-muted small">Total Users</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-users fa-2x opacity-75"></i>
-                        </div>
+                        <div class="text-muted"><i class="fas fa-users fa-lg"></i></div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card stats-min card-sm accent-orange">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <div class="stats-number">{{ stats.total_requests or 0 }}</div>
-                            <div class="text-uppercase">Total Requests</div>
+                            <div class="text-uppercase text-muted small">Total Requests</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
-                        </div>
+                        <div class="text-muted"><i class="fas fa-clipboard-list fa-lg"></i></div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card stats-min card-sm accent-slate">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <div class="stats-number">{{ stats.active_requests or 0 }}</div>
-                            <div class="text-uppercase">Active Now</div>
+                            <div class="text-uppercase text-muted small">Active Now</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-clock fa-2x opacity-75"></i>
-                        </div>
+                        <div class="text-muted"><i class="fas fa-clock fa-lg"></i></div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stats-card" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card stats-min card-sm accent-green">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <div class="stats-number">{{ stats.today_activities or 0 }}</div>
-                            <div class="text-uppercase">Today's Activities</div>
+                            <div class="text-uppercase text-muted small">Today's Activities</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-chart-line fa-2x opacity-75"></i>
-                        </div>
+                        <div class="text-muted"><i class="fas fa-chart-line fa-lg"></i></div>
                     </div>
                 </div>
             </div>

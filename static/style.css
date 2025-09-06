@@ -296,3 +296,220 @@
         --bs-body-color: #ffffff;
     }
 }
+
+/* ========================================
+   Professional Theme — Compact & Colorful
+   Palette: Navy, Yellow, White, Red, Green
+   Non-breaking: Only CSS, no HTML/JS changes
+   ======================================== */
+:root {
+    --brand-navy: #0b1b3b;        /* Navy */
+    --brand-navy-2: #102a56;      /* Deep Navy */
+    --brand-blue: #0f4c81;        /* Mikrotik-ish blue */
+    --brand-yellow: #f7c948;      /* Yellow (warnings/highlight) */
+    --brand-green: #27ae60;       /* Green (success) */
+    --brand-red: #e74c3c;         /* Red (danger) */
+    --brand-white: #ffffff;       /* White */
+
+    --brand-bg: #f5f7fb;          /* Subtle app background */
+    --card-radius: 12px;          /* Rounded corners */
+    --card-padding: 0.9rem;       /* Compact card padding */
+    --box-shadow: 0 8px 24px rgba(11, 27, 59, 0.08);
+    --box-shadow-hover: 0 14px 32px rgba(11, 27, 59, 0.12);
+}
+
+/* Global background & typography */
+body {
+    background: var(--brand-bg) !important;
+    color: #1f2a44;
+}
+
+/* Navbar — sleek gradient, compact height with orange/black option */
+:root {
+    --brand-black: #0e0f12;      /* Deep black for accents */
+    --brand-orange: #ff8c42;     /* Orange accent */
+}
+.navbar {
+    background: linear-gradient(135deg, var(--brand-black), var(--brand-navy)) !important;
+    box-shadow: var(--box-shadow) !important;
+}
+.navbar .navbar-brand { letter-spacing: .3px; }
+.navbar .nav-link { position: relative; padding: 0.4rem 0.8rem; }
+.navbar .nav-link:hover { color: #fff !important; }
+.navbar .nav-link::after { /* disable underline artifacts entirely */
+    content: none !important;
+}
+/* Keep a clean hover without underlines */
+.navbar .nav-link:hover { color: #fff !important; }
+
+/* Cards — more compact, elevated */
+.card { border-radius: var(--card-radius) !important; box-shadow: var(--box-shadow) !important; }
+.card:hover { box-shadow: var(--box-shadow-hover) !important; }
+.card .card-body { padding: var(--card-padding) !important; }
+.card .card-header { padding: 0.65rem 0.95rem !important; }
+
+/* Buttons — compact and colorful */
+.btn { border-radius: 10px !important; padding: 0.45rem 0.9rem !important; font-weight: 600; }
+.btn-primary { background: linear-gradient(135deg, var(--brand-blue), #1c6cb4) !important; border: none !important; }
+.btn-primary:hover { background: linear-gradient(135deg, #1a5f9d, var(--brand-blue)) !important; }
+.btn-success { background: linear-gradient(135deg, var(--brand-green), #2ecc71) !important; border: none !important; }
+.btn-danger { background: linear-gradient(135deg, var(--brand-red), #ec7063) !important; border: none !important; }
+.btn-warning { background: linear-gradient(135deg, var(--brand-yellow), #ffe08a) !important; color: #1f2a44 !important; border: none !important; }
+.btn-dark { background: linear-gradient(135deg, var(--brand-black), #1b1d24) !important; border: none !important; }
+.btn-orange { background: linear-gradient(135deg, var(--brand-orange), #ff6a00) !important; border: none !important; color: #1f2a44 !important; }
+.btn-outline-orange { border-color: var(--brand-orange) !important; color: var(--brand-orange) !important; }
+.btn-outline-orange:hover { background: var(--brand-orange) !important; color: #1f2a44 !important; }
+
+/* Optional themed buttons without HTML changes */
+.btn-navy { background: linear-gradient(135deg, var(--brand-navy), var(--brand-blue)); color: #fff; border: none; }
+.btn-outline-navy { border-color: var(--brand-navy); color: var(--brand-navy); }
+.btn-outline-navy:hover { background: var(--brand-navy); color: #fff; }
+
+/* Button group spacing fixes */
+.btn-group[role="group"] > .btn + .btn { margin-left: 0 !important; }
+.btn-group[role="group"] { gap: .5rem; }
+
+/* Forms — tighter inputs */
+.form-control, .form-select { border-radius: 10px !important; padding: 0.5rem 0.75rem !important; font-size: 0.95rem !important; }
+.input-group-text { border-radius: 10px 0 0 10px !important; }
+.input-group .btn { border-radius: 0 10px 10px 0 !important; }
+
+/* Tables — compact & readable */
+.table { --tbl-pad-y: 0.55rem; --tbl-pad-x: 0.75rem; border-collapse: separate !important; border-spacing: 0 !important; }
+.table thead th { font-weight: 700; letter-spacing: .02em; border-bottom: 1px solid rgba(0,0,0,0.06) !important; }
+.table > :not(caption) > * > * { padding: var(--tbl-pad-y) var(--tbl-pad-x); vertical-align: middle; }
+.table-hover tbody tr:hover { background: rgba(15, 76, 129, 0.05) !important; }
+.table .badge { transform: translateY(-1px); }
+.table thead th:first-child { border-top-left-radius: 8px; }
+.table thead th:last-child { border-top-right-radius: 8px; }
+.table tbody tr:last-child td:first-child { border-bottom-left-radius: 8px; }
+.table tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
+
+/* Badges — tighter pills */
+.badge { border-radius: 999px !important; padding: 0.35em 0.6em !important; font-weight: 600; }
+.badge.bg-success { background-color: var(--brand-green) !important; }
+.badge.bg-danger { background-color: var(--brand-red) !important; }
+.badge.bg-warning { background-color: var(--brand-yellow) !important; color: #1f2a44 !important; }
+
+/* Alerts */
+.alert { border: none !important; border-left: 4px solid transparent; box-shadow: var(--box-shadow); }
+.alert-success { border-left-color: var(--brand-green); }
+.alert-danger { border-left-color: var(--brand-red); }
+.alert-warning { border-left-color: var(--brand-yellow); }
+
+/* HR and separators — remove harsh white lines */
+hr { border: 0; height: 1px; background: rgba(0,0,0,0.06); margin: 0.75rem 0; }
+.card .card-body > hr { background: rgba(0,0,0,0.06); }
+
+/* Stats cards — vibrant presets (professional palettes) */
+.stats-card { color: #fff; border: none !important; position: relative; overflow: hidden; }
+.stats-card .stats-number { font-size: 2.2rem !important; }
+
+/* Intelligent gradient sets */
+.stats-blue { background: linear-gradient(135deg, #1f5eff, #00c2ff) !important; }
+.stats-green { background: linear-gradient(135deg, #16a085, #2ecc71) !important; }
+.stats-orange { background: linear-gradient(135deg, #ff8c42, #ff5f6d) !important; }
+.stats-purple { background: linear-gradient(135deg, #7F00FF, #E100FF) !important; }
+.stats-slate { background: linear-gradient(135deg, #0e0f12, #2c3e50) !important; }
+
+/* Subtle diagonal sheen */
+.stats-card::after {
+    content: ""; position: absolute; top: -50%; right: -50%; width: 120%; height: 200%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.14), rgba(255,255,255,0));
+    transform: rotate(15deg);
+}
+
+/* Footer — clean & minimal (black/orange accent) */
+.footer { background: var(--brand-black); color: #cfd7ea; border-top: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); }
+.footer a { color: var(--brand-orange); text-decoration: underline; }
+
+/* Chips & accents */
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 0.25rem 0.6rem; border-radius: 999px; background: #eef3fb; color: #1f2a44; font-weight: 600; }
+.section-title { font-weight: 800; color: var(--brand-navy); border-left: 4px solid var(--brand-yellow); padding-left: 0.5rem; }
+
+/* Minimal hero band */
+.hero { border-radius: 14px; padding: 1rem 1.25rem; position: relative; }
+.hero-minimal { background: linear-gradient(180deg, #ffffff, #f8fafc); border: 1px solid rgba(0,0,0,0.06); }
+.hero-minimal::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--brand-navy), var(--brand-blue)); border-radius: 14px 14px 0 0; }
+.hero .hero-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(27, 60, 129, .08); color: var(--brand-navy); display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.hero .hero-meta { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+/* Minimal stats cards */
+.stats-min { background: #ffffff !important; color: #1f2a44 !important; border: 1px solid rgba(0,0,0,0.06) !important; box-shadow: 0 6px 18px rgba(0,0,0,0.05) !important; }
+.stats-min .stats-number { font-size: 2rem !important; font-weight: 800; }
+.stats-min .card-body { padding: 1rem 1rem !important; }
+.accent-blue { border-top: 3px solid var(--brand-blue) !important; }
+.accent-green { border-top: 3px solid var(--brand-green) !important; }
+.accent-orange { border-top: 3px solid var(--brand-orange) !important; }
+.accent-slate { border-top: 3px solid #4a5568 !important; }
+
+/* Compact utilities (no markup changes required) */
+.compact .card-body, .compact .modal-body { padding: 0.75rem !important; }
+.compact .btn { padding: 0.35rem 0.7rem !important; font-size: 0.9rem !important; }
+.compact .form-control { padding: 0.45rem 0.65rem !important; }
+
+/* Modal header — brand */
+.modal-header { background: linear-gradient(135deg, var(--brand-blue), var(--brand-navy)) !important; color: #fff !important; }
+.modal-header .btn-close { filter: invert(1); }
+
+/* Remove possible white gaps/margins to tighten layout */
+.container, .container-fluid { padding-left: 1rem !important; padding-right: 1rem !important; }
+.card { margin-bottom: 1rem !important; }
+
+/* Subtle section separators instead of white lines */
+.card-header { border-bottom: 1px solid rgba(255,255,255,0.0) !important; }
+.card-body + .card-body { border-top: 1px solid rgba(0,0,0,0.06); }
+
+/* Admin and profile polish */
+#usersTable th, #usersTable td,
+#active-requests-table th, #active-requests-table td { border-top-color: rgba(0,0,0,0.06) !important; }
+
+/* Strong, minimal hero band */
+.hero-band { background: linear-gradient(180deg, #ffffff, #f7f9fc); border: 1px solid rgba(0,0,0,0.06); border-radius: 14px; padding: 1rem 1.25rem; position: relative; overflow: hidden; }
+.hero-band::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--brand-navy), var(--brand-blue)); border-radius: 14px 14px 0 0; }
+.hero-band .hero-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(15, 76, 129, .08); color: var(--brand-navy); display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+
+/* Page compact mode — fits more on screen with minimal color */
+.page-compact .row.mb-4 { margin-bottom: 0.75rem !important; }
+.page-compact .mb-4 { margin-bottom: 0.75rem !important; }
+.page-compact .card .card-body { padding: 0.7rem !important; }
+.page-compact .card .card-header { padding: 0.5rem 0.75rem !important; }
+.page-compact .stats-min .stats-number { font-size: 1.45rem !important; }
+.page-compact h1.h3, .page-compact h1.h4 { margin-bottom: 0 !important; }
+.page-compact .g-3 { --bs-gutter-x: 0.75rem; --bs-gutter-y: 0.75rem; }
+
+/* Smaller stats variant */
+.stats-sm .card-body { padding: 0.65rem !important; }
+.stats-sm .stats-number { font-size: 1.4rem !important; font-weight: 800; }
+.stats-sm .text-muted.small { font-size: .7rem !important; }
+
+/* Soft/ghost buttons for minimal UI */
+.btn-ghost-secondary { background: transparent !important; border: 1px solid rgba(0,0,0,0.12) !important; color: #6c757d !important; }
+.btn-ghost-secondary:hover { background: rgba(0,0,0,0.04) !important; color: #495057 !important; }
+.btn-soft-primary { background: rgba(15,76,129,0.1) !important; color: var(--brand-blue) !important; border: 1px solid rgba(15,76,129,0.15) !important; }
+.btn-soft-primary:hover { background: rgba(15,76,129,0.15) !important; }
+.btn-soft-danger { background: rgba(231,76,60,0.08) !important; color: var(--brand-red) !important; border: 1px solid rgba(231,76,60,0.18) !important; }
+.btn-soft-danger:hover { background: rgba(231,76,60,0.12) !important; }
+
+/* Compact, simple tables */
+.table-compact > :not(caption) > * > * { padding: 0.45rem 0.6rem !important; }
+.table-simple thead th { background: transparent !important; border-bottom: 1px solid rgba(0,0,0,0.06) !important; }
+.table-simple tbody td { border-top: 1px solid rgba(0,0,0,0.06) !important; }
+.table-simple.table-hover tbody tr:hover { background: rgba(0,0,0,0.03) !important; }
+
+/* Softer card shadows for clean view */
+.card { box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important; }
+.card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important; }
+
+/* Smaller card variant */
+.card-sm .card-body { padding: 0.65rem 0.75rem !important; }
+.card-sm .card-header { padding: 0.45rem 0.75rem !important; }
+.card-sm .form-control, .card-sm .form-select { padding: 0.4rem 0.6rem !important; font-size: 0.92rem !important; }
+
+/* Soft buttons (minimal color) */
+.btn-soft { background: #eef3fb !important; color: #1f2a44 !important; border: 1px solid rgba(0,0,0,0.08) !important; }
+.btn-soft:hover { background: #e6eef8 !important; }
+
+/* Compact list */
+.list-compact { margin-left: 1rem; }
+.list-compact li { margin-bottom: 0.25rem; }
