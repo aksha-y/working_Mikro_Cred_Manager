@@ -110,7 +110,7 @@ Note: Do not commit `.env` to GitHub.
 
 ## 3) Initialize database
 
-SQLite is auto-initialized on first start. If you prefer, you can run the helper once:
+SQLite is auto-initialized on first start. If you prefer, you can run the helper once:(this command is optional)
 ```powershell
 .\.venv\Scripts\python.exe .\init_db_sqlite.py
 ```
@@ -135,6 +135,10 @@ This creates tables and a default admin (password from `.env` ADMIN_DEFAULT_PASS
 Run as Administrator:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\setup_firewall.ps1
+```
+or
+```
+New-NetFirewallRule -DisplayName "ALLOW TCP PORT 8080" -Direction Inbound -Profile Any -Action Allow -LocalPort 8080 -Protocol TCP
 ```
 - Ensure your cloud provider/network security group also allows inbound TCP 80.
 - Access externally: `http://YOUR_PUBLIC_IP:8000`
